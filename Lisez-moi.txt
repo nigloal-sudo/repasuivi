@@ -1,0 +1,17 @@
+RépaSuivi v0.2 — ajout des photos hors ligne
+
+Contenu à mettre à jour dans le dépôt GitHub existant :
+- index.html (version minuscule) et/ou Index.html (version majuscule) : remplacer par le fichier correspondant de cette archive.
+- Sw.js : remplacer le fichier existant pour forcer le rechargement de l’application.
+
+Ne supprime pas Manifest.webmanifest ni le dossier icons déjà présents dans ton dépôt.
+Les photos sont compressées puis stockées dans IndexedDB sur ce téléphone. Les sauvegardes JSON incluent les photos afin de pouvoir les transférer/restaurer.
+
+IMPORTANT AVANT LA MISE À JOUR :
+1. Dans l’application actuellement installée, exporte une sauvegarde JSON et conserve-la.
+2. Mets à jour les fichiers sur GitHub.
+3. Rouvre RépaSuivi avec Internet actif et attends quelques secondes que la mise à jour se charge.
+4. Vérifie les clients/réparations. Les anciennes données sont conservées dans le stockage du navigateur.
+5. Fais une nouvelle sauvegarde avant d’ajouter beaucoup de photos.
+
+Pour tester les photos, ouvre un dossier existant, ajoute une photo, enregistre, ferme puis rouvre le dossier. Fais ensuite un export JSON de test.

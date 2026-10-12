@@ -4,10 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17191d">
-<meta name="description" content="Gestion locale des dépôts et réparations">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png" type="image/png">
 <title>RépaSuivi</title>
+<meta name="app-version" content="0.2">
+<link rel="manifest" href="./Manifest.webmanifest">
 <style>
 :root{color-scheme:dark;--bg:#111316;--panel:#1b1e23;--panel2:#242830;--line:#343943;--text:#f2f3f5;--muted:#a9afb9;--accent:#75a7ff;--ok:#70d6a0;--warn:#f2c66d;--danger:#ff7c83}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
@@ -17,6 +16,10 @@ main{max-width:850px;margin:auto;padding:15px 13px 90px}.stats{display:grid;grid
 nav{display:flex;gap:7px;overflow:auto;padding:4px 0 13px}.tab,button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer;white-space:nowrap}.tab.active,.primary{background:var(--accent);color:#10151e;border-color:var(--accent);font-weight:700}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:12px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.between{display:flex;justify-content:space-between;gap:8px;align-items:center}.muted{color:var(--muted)}h2{font-size:18px;margin:0 0 12px}h3{font-size:16px;margin:0 0 6px}
 label{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px}input,textarea,select{width:100%;background:#111317;color:var(--text);border:1px solid #424854;border-radius:9px;padding:11px;font:inherit}textarea{min-height:76px;resize:vertical}.fieldgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.full{grid-column:1/-1}.item{background:#202329;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:9px}.badge{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;background:#353b45;color:#e8ebef}.badge.ok{background:#183d2d;color:#91efbd}.badge.warn{background:#49391b;color:#ffe09a}.badge.danger{background:#4a2529;color:#ffb5b9}.smallbtn{font-size:12px;padding:7px 9px}.dangerbtn{border-color:#8a4147;color:#ffb5b9}.empty{text-align:center;color:var(--muted);padding:25px 10px}.hidden{display:none!important}.total{font-size:20px;font-weight:800;color:var(--ok)}.foot{font-size:12px;color:var(--muted);line-height:1.5;margin-top:18px}
+.photogrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.photo-card{position:relative;background:#111317;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.photo-card img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover}
+.photo-card button{position:absolute;top:5px;right:5px;padding:4px 7px;background:#242830eF;border-color:#777;font-size:12px}
 @media(max-width:430px){.fieldgrid{grid-template-columns:1fr}.full{grid-column:auto}.stats{gap:6px}.stat{padding:9px}.stat b{font-size:19px}.tab{padding:9px 10px}}
 </style>
 </head>
@@ -64,6 +67,13 @@ label{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px}input,te
   <div><label>Main-d'œuvre (€)</label><input id="laborCost" type="number" min="0" step="0.01" value="0"></div>
   <div><label>Statut</label><select id="status"><option>Déposé</option><option>En diagnostic</option><option>En attente de pièces</option><option>En réparation</option><option>Réparé</option><option>Irréparable</option><option>Restitué</option></select></div>
   <div><label>Date de restitution</label><input id="returnDate" type="date"></div>
+  <div class="full">
+   <label>Photos de la réparation (6 maximum par dossier)</label>
+   <input id="photoInput" type="file" accept="image/*" multiple>
+   <p class="muted" style="font-size:12px;margin:6px 0">Choisis des photos dans la galerie ou prends une photo. Elles sont compressées et conservées sur ce téléphone, même hors ligne.</p>
+   <div id="photoStatus" class="muted" style="font-size:12px;margin:6px 0"></div>
+   <div id="photoPreview" class="photogrid"></div>
+  </div>
  </div>
  <div class="between" style="margin:14px 0"><span class="muted">Total estimé</span><span class="total" id="totalPreview">0,00 €</span></div>
  <div class="row"><button class="primary" type="submit">Enregistrer le dossier</button><button type="button" id="cancelEdit">Annuler</button></div>
@@ -71,12 +81,92 @@ label{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px}input,te
 </section>
 <section id="view-backup" class="hidden">
  <div class="panel"><h2>Sauvegarde des données</h2><p class="muted">Les données sont stockées dans le navigateur de ce téléphone. Exportez régulièrement une sauvegarde et conservez-la dans un endroit sûr.</p><div class="row"><button class="primary" id="exportBtn">Exporter la sauvegarde</button><button id="importBtn">Importer une sauvegarde</button><input id="importFile" type="file" accept="application/json,.json" class="hidden"></div><p class="foot">Important : l'effacement des données du navigateur peut supprimer les dossiers. Une sauvegarde exportée permet de les restaurer. Cette première version n'envoie aucune donnée vers un serveur.</p></div>
- <div class="panel"><h2>À savoir</h2><p class="muted">Version initiale : gestion des clients et dossiers, calcul des tarifs et sauvegarde JSON. Les photos et la génération PDF seront ajoutées dans une prochaine étape. Pour des factures officielles, il faudra adapter les mentions aux obligations applicables à ton activité.</p></div>
+ <div class="panel"><h2>À savoir</h2><p class="muted">Version 0.2 : gestion des clients et dossiers, photos compressées stockées localement, fonctionnement hors ligne et sauvegardes JSON incluant les photos. Pour des factures officielles, il faudra adapter les mentions aux obligations applicables à ton activité.</p></div>
 </section>
-<div class="foot">RépaSuivi · Version 0.1 · Usage personnel. Pense à sauvegarder régulièrement tes données.</div>
+<div class="foot">RépaSuivi · Version 0.2 · Usage personnel. Pense à sauvegarder régulièrement tes données.</div>
 </main>
 <script>
 const KEY='repasuivi_data_v1';
+
+const PHOTO_DB='repasuivi_photos_v1';
+let photoDbPromise;
+let pendingPhotoIds=[];
+let newlyAddedPhotoIds=[];
+let removedPhotoIds=[];
+const MAX_PHOTOS=6;
+function openPhotoDb(){
+ if(!('indexedDB' in window)) return Promise.reject(new Error('Le stockage local des photos n’est pas disponible dans ce navigateur.'));
+ if(!photoDbPromise) photoDbPromise=new Promise((resolve,reject)=>{
+  const req=indexedDB.open(PHOTO_DB,1);
+  req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('photos'))req.result.createObjectStore('photos',{keyPath:'id'});};
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error||new Error('Impossible d’ouvrir le stockage des photos.'));
+ });
+ return photoDbPromise;
+}
+async function putPhoto(record){
+ const d=await openPhotoDb();
+ return new Promise((resolve,reject)=>{const tx=d.transaction('photos','readwrite');tx.objectStore('photos').put(record);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});
+}
+async function getPhoto(id){
+ const d=await openPhotoDb();
+ return new Promise((resolve,reject)=>{const req=d.transaction('photos','readonly').objectStore('photos').get(id);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);});
+}
+async function deletePhotoRecord(id){
+ try{const d=await openPhotoDb();await new Promise((resolve,reject)=>{const tx=d.transaction('photos','readwrite');tx.objectStore('photos').delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}catch(e){console.warn(e);}
+}
+function compressPhoto(file){
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onerror=()=>reject(new Error('Lecture de la photo impossible.'));
+  reader.onload=()=>{
+   const img=new Image();
+   img.onerror=()=>reject(new Error('Cette image ne peut pas être ouverte.'));
+   img.onload=()=>{
+    const max=1280,scale=Math.min(1,max/Math.max(img.width,img.height));
+    const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));
+    const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    resolve(canvas.toDataURL('image/jpeg',0.72));
+   };
+   img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+ });
+}
+async function renderPhotoPreview(){
+ const holder=$('photoPreview'); if(!holder)return;
+ holder.innerHTML='';
+ for(const id of pendingPhotoIds){
+  const p=await getPhoto(id);
+  if(!p)continue;
+  const card=document.createElement('div');card.className='photo-card';
+  const img=document.createElement('img');img.src=p.dataUrl;img.alt='Photo de réparation';img.loading='lazy';
+  const btn=document.createElement('button');btn.type='button';btn.textContent='Retirer';btn.setAttribute('aria-label','Retirer cette photo');btn.onclick=()=>removePhotoFromForm(id);
+  card.append(img,btn);holder.appendChild(card);
+ }
+ $('photoStatus').textContent=`${pendingPhotoIds.length}/${MAX_PHOTOS} photo(s) sélectionnée(s)`;
+}
+async function removePhotoFromForm(id){
+ pendingPhotoIds=pendingPhotoIds.filter(x=>x!==id);
+ if(newlyAddedPhotoIds.includes(id)){newlyAddedPhotoIds=newlyAddedPhotoIds.filter(x=>x!==id);await deletePhotoRecord(id);}
+ else if(!removedPhotoIds.includes(id))removedPhotoIds.push(id);
+ await renderPhotoPreview();
+}
+async function addSelectedPhotos(files){
+ try{
+  for(const file of Array.from(files||[])){
+   if(pendingPhotoIds.length>=MAX_PHOTOS){alert('Maximum 6 photos par dossier.');break;}
+   if(!file.type.startsWith('image/'))continue;
+   const dataUrl=await compressPhoto(file);
+   const id='p'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+   await putPhoto({id,dataUrl,createdAt:new Date().toISOString()});
+   pendingPhotoIds.push(id);newlyAddedPhotoIds.push(id);
+  }
+  await renderPhotoPreview();
+ }catch(err){alert('Impossible d’ajouter la photo. Vérifie l’espace disponible sur le téléphone.');console.error(err);}
+ $('photoInput').value='';
+}
+
 const today=()=>new Date().toISOString().slice(0,10);
 let db={clients:[],repairs:[],nextRepair:1,nextClient:1};
 try{const old=localStorage.getItem(KEY);if(old)db={...db,...JSON.parse(old)}}catch(e){}
@@ -97,19 +187,47 @@ $('search').addEventListener('input',renderRepairs);$('filterStatus').addEventLi
 $('clientSelect').addEventListener('change',()=>{const c=clientById($('clientSelect').value);if(c){$('customerName').value=c.name;$('customerPhone').value=c.phone||'';$('customerAddress').value=c.address||'';$('customerEmail').value=c.email||'';$('customerNotes').value=c.notes||''}else{$('customerName').value='';$('customerPhone').value='';$('customerAddress').value='';$('customerEmail').value='';$('customerNotes').value=''}});
 function updateTotal(){$('totalPreview').textContent=euro(Number($('partsCost').value||0)+Number($('laborCost').value||0))}
 $('partsCost').oninput=updateTotal;$('laborCost').oninput=updateTotal;
-function resetForm(){ $('repairForm').reset();$('editRepairId').value='';$('repairFormTitle').textContent='Nouveau dépôt';$('depositDate').value=today();$('partsCost').value='0';$('laborCost').value='0';$('status').value='Déposé';renderSelect();updateTotal() }
+$('photoInput').addEventListener('change',e=>addSelectedPhotos(e.target.files));
+function resetForm(){newlyAddedPhotoIds.forEach(id=>deletePhotoRecord(id));newlyAddedPhotoIds=[];removedPhotoIds=[];pendingPhotoIds=[];$('repairForm').reset();$('editRepairId').value='';$('repairFormTitle').textContent='Nouveau dépôt';$('depositDate').value=today();$('partsCost').value='0';$('laborCost').value='0';$('status').value='Déposé';renderSelect();updateTotal();renderPhotoPreview()}
 $('cancelEdit').onclick=()=>{resetForm();showView('repairs')};
 function newForClient(id){resetForm();$('clientSelect').value=id;$('clientSelect').dispatchEvent(new Event('change'));showView('newrepair')}
 $('addClientBtn').onclick=()=>{const name=prompt('Nom et prénom du client :');if(!name?.trim())return;const c={id:'c'+Date.now(),name:name.trim(),phone:'',address:'',email:'',notes:''};db.clients.push(c);save();editClient(c.id)};
 function editClient(id){const c=clientById(id);if(!c)return;const name=prompt('Nom et prénom :',c.name);if(name===null)return;if(!name.trim())return alert('Le nom est obligatoire.');c.name=name.trim();c.phone=prompt('Téléphone :',c.phone||'')??c.phone;c.address=prompt('Adresse :',c.address||'')??c.address;c.email=prompt('E-mail :',c.email||'')??c.email;c.notes=prompt('Notes :',c.notes||'')??c.notes;save()}
-function editRepair(id){const r=db.repairs.find(x=>x.id===id);if(!r)return;resetForm();$('editRepairId').value=r.id;$('repairFormTitle').textContent='Modifier '+r.ref;renderSelect(r.clientId);$('clientSelect').value=r.clientId;const c=clientById(r.clientId)||{};for(const [id,val] of Object.entries({customerName:c.name||'',customerPhone:c.phone||'',customerAddress:c.address||'',customerEmail:c.email||'',customerNotes:c.notes||'',deviceType:r.deviceType,deviceModel:r.deviceModel,serial:r.serial,depositDate:r.depositDate,fault:r.fault,condition:r.condition,diagnosis:r.diagnosis,workDone:r.workDone,parts:r.parts,partsCost:r.partsCost,laborCost:r.laborCost,status:r.status,returnDate:r.returnDate||''}))$(id).value=val??'';updateTotal();showView('newrepair')}
+function editRepair(id){const r=db.repairs.find(x=>x.id===id);if(!r)return;resetForm();pendingPhotoIds=[...(r.photoIds||[])];renderPhotoPreview();$('editRepairId').value=r.id;$('repairFormTitle').textContent='Modifier '+r.ref;renderSelect(r.clientId);$('clientSelect').value=r.clientId;const c=clientById(r.clientId)||{};for(const [id,val] of Object.entries({customerName:c.name||'',customerPhone:c.phone||'',customerAddress:c.address||'',customerEmail:c.email||'',customerNotes:c.notes||'',deviceType:r.deviceType,deviceModel:r.deviceModel,serial:r.serial,depositDate:r.depositDate,fault:r.fault,condition:r.condition,diagnosis:r.diagnosis,workDone:r.workDone,parts:r.parts,partsCost:r.partsCost,laborCost:r.laborCost,status:r.status,returnDate:r.returnDate||''}))$(id).value=val??'';updateTotal();showView('newrepair')}
 function quickStatus(id){const r=db.repairs.find(x=>x.id===id);if(!r)return;const opts=['Déposé','En diagnostic','En attente de pièces','En réparation','Réparé','Irréparable','Restitué'];const next=prompt('Nouveau statut :\n'+opts.map((s,i)=>`${i+1}. ${s}`).join('\n'),String(opts.indexOf(r.status)+1));if(next===null)return;const n=Number(next);if(!Number.isInteger(n)||n<1||n>opts.length)return alert('Choix invalide.');r.status=opts[n-1];if(r.status==='Restitué'&&!r.returnDate)r.returnDate=today();save()}
 $('repairForm').addEventListener('submit',e=>{e.preventDefault();const name=$('customerName').value.trim();if(!name)return;let c=clientById($('clientSelect').value);if(!c){c={id:'c'+Date.now(),name,phone:$('customerPhone').value.trim(),address:$('customerAddress').value.trim(),email:$('customerEmail').value.trim(),notes:$('customerNotes').value.trim()};db.clients.push(c)}else Object.assign(c,{name,phone:$('customerPhone').value.trim(),address:$('customerAddress').value.trim(),email:$('customerEmail').value.trim(),notes:$('customerNotes').value.trim()});
-const id=$('editRepairId').value;const old=id?db.repairs.find(r=>r.id===id):null;const r={id:id||'r'+Date.now(),ref:old?.ref||`REP-${new Date().getFullYear()}-${String(db.nextRepair++).padStart(3,'0')}`,clientId:c.id,deviceType:$('deviceType').value.trim(),deviceModel:$('deviceModel').value.trim(),serial:$('serial').value.trim(),depositDate:$('depositDate').value,fault:$('fault').value.trim(),condition:$('condition').value.trim(),diagnosis:$('diagnosis').value.trim(),workDone:$('workDone').value.trim(),parts:$('parts').value.trim(),partsCost:Number($('partsCost').value||0),laborCost:Number($('laborCost').value||0),status:$('status').value,returnDate:$('returnDate').value,createdAt:old?.createdAt||new Date().toISOString()};if(old)Object.assign(old,r);else db.repairs.push(r);save();resetForm();showView('repairs');alert('Dossier enregistré : '+r.ref)});
-$('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({...db,exportedAt:new Date().toISOString(),app:'RépaSuivi'},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='repasuivi-sauvegarde-'+today()+'.json';a.click();URL.revokeObjectURL(a.href)};
+const id=$('editRepairId').value;const old=id?db.repairs.find(r=>r.id===id):null;const r={id:id||'r'+Date.now(),ref:old?.ref||`REP-${new Date().getFullYear()}-${String(db.nextRepair++).padStart(3,'0')}`,clientId:c.id,deviceType:$('deviceType').value.trim(),deviceModel:$('deviceModel').value.trim(),serial:$('serial').value.trim(),depositDate:$('depositDate').value,fault:$('fault').value.trim(),condition:$('condition').value.trim(),diagnosis:$('diagnosis').value.trim(),workDone:$('workDone').value.trim(),parts:$('parts').value.trim(),partsCost:Number($('partsCost').value||0),laborCost:Number($('laborCost').value||0),status:$('status').value,returnDate:$('returnDate').value,photoIds:[...pendingPhotoIds],createdAt:old?.createdAt||new Date().toISOString()};if(old)Object.assign(old,r);else db.repairs.push(r);save();removedPhotoIds.forEach(id=>deletePhotoRecord(id));removedPhotoIds=[];newlyAddedPhotoIds=[];resetForm();showView('repairs');alert('Dossier enregistré : '+r.ref)});
+
+$('exportBtn').onclick=async()=>{
+ try{
+  const ids=[...new Set(db.repairs.flatMap(r=>r.photoIds||[]))];
+  const photos=[];
+  for(const id of ids){const p=await getPhoto(id);if(p)photos.push(p);}
+  const payload={...db,photos,exportedAt:new Date().toISOString(),app:'RépaSuivi'};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='repasuivi-sauvegarde-'+today()+'.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  alert(`Sauvegarde créée avec ${photos.length} photo(s). Conserve ce fichier en lieu sûr.`);
+ }catch(err){alert('Export impossible. Réessaie ou vérifie l’espace disponible.');console.error(err);}
+};
 $('importBtn').onclick=()=>$('importFile').click();
-$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data.clients)||!Array.isArray(data.repairs))throw Error();if(!confirm('Importer cette sauvegarde remplacera les données actuelles. Continuer ?'))return;db={clients:data.clients,repairs:data.repairs,nextRepair:data.nextRepair||data.repairs.length+1,nextClient:data.nextClient||data.clients.length+1};save();alert('Sauvegarde restaurée.')}catch(err){alert('Fichier invalide ou illisible.')}e.target.value=''};
+$('importFile').onchange=async e=>{
+ const f=e.target.files[0];if(!f)return;
+ try{
+  const data=JSON.parse(await f.text());
+  if(!Array.isArray(data.clients)||!Array.isArray(data.repairs))throw Error('format');
+  if(!confirm('Importer cette sauvegarde remplacera les données actuelles. Continuer ?'))return;
+  const importedPhotos=Array.isArray(data.photos)?data.photos:[];
+  for(const p of importedPhotos){if(p&&p.id&&typeof p.dataUrl==='string')await putPhoto(p);}
+  db={clients:data.clients,repairs:data.repairs,nextRepair:data.nextRepair||data.repairs.length+1,nextClient:data.nextClient||data.clients.length+1};
+  save();alert(`Sauvegarde restaurée. ${importedPhotos.length} photo(s) importée(s).`);
+ }catch(err){alert('Fichier invalide, illisible ou espace insuffisant pour les photos.');console.error(err);}
+ e.target.value='';
+};
+
 resetForm();renderAll();
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Mode hors ligne non activé', err))); }
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+ navigator.serviceWorker.register('./Sw.js').catch(err=>console.warn('Service worker non enregistré',err));
+}
 </script>
 </body></html>
