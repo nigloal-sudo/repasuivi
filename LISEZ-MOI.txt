@@ -1,0 +1,25 @@
+RépaSuivi — version installable (PWA)
+
+IMPORTANT : ce dossier doit être publié sur une adresse HTTPS pour que Chrome propose l'installation et active le mode hors ligne. L'ouverture directe de index.html ne suffit pas pour installer une PWA.
+
+Contenu :
+- index.html : l'application
+- manifest.webmanifest : identité et réglages d'installation
+- sw.js : cache hors ligne de l'application
+- icons/ : icônes Android
+
+AVANT DE CHANGER DE VERSION :
+1. Dans l'ancienne version ouverte depuis index.html, ouvrez Sauvegarde des données.
+2. Appuyez sur « Exporter la sauvegarde » et conservez le fichier JSON.
+3. Après installation de la version hébergée, ouvrez RépaSuivi > Sauvegarde des données > Importer une sauvegarde, puis choisissez ce fichier JSON.
+
+Les données clients et réparations restent dans le stockage local du navigateur sur l'appareil. Elles ne sont pas envoyées par le code à un serveur. Le code de l'application est hébergé sur le site choisi pour l'installation ; évitez d'utiliser un service auquel vous ne faites pas confiance. Faites des exports de sauvegarde réguliers. Si vous effacez les données du navigateur, les dossiers peuvent être perdus.
+
+Installation Android (une fois le dossier hébergé en HTTPS) :
+1. Ouvrez l'adresse du site dans Chrome.
+2. Attendez que la page soit entièrement chargée avec Internet, pour que le cache hors ligne s'installe.
+3. Menu Chrome ⋮ > « Installer l'application » ou « Ajouter à l'écran d'accueil » (le libellé varie selon la version).
+4. Ouvrez l'icône RépaSuivi créée sur l'écran d'accueil.
+5. Testez le mode avion et l'exportation avant d'y saisir des données réelles.
+
+Cette version conserve les fonctions présentes dans la version 0.1. Elle n'ajoute pas encore les photos ni les PDF.

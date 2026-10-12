@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "RépaSuivi",
+  "short_name": "RépaSuivi",
+  "description": "Gestion locale des dépôts et réparations",
+  "lang": "fr-FR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111316",
+  "theme_color": "#17191d",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

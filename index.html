@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17191d">
+<meta name="description" content="Gestion locale des dépôts et réparations">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<title>RépaSuivi</title>
+<style>
+:root{color-scheme:dark;--bg:#111316;--panel:#1b1e23;--panel2:#242830;--line:#343943;--text:#f2f3f5;--muted:#a9afb9;--accent:#75a7ff;--ok:#70d6a0;--warn:#f2c66d;--danger:#ff7c83}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:20px 16px 14px;background:#17191d;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:3}
+.brand{font-size:23px;font-weight:800;letter-spacing:.2px}.brand span{color:var(--accent)}.subtitle{font-size:12px;color:var(--muted);margin-top:3px}
+main{max-width:850px;margin:auto;padding:15px 13px 90px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.stat{background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:13px}.stat b{display:block;font-size:22px}.stat small{color:var(--muted)}
+nav{display:flex;gap:7px;overflow:auto;padding:4px 0 13px}.tab,button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer;white-space:nowrap}.tab.active,.primary{background:var(--accent);color:#10151e;border-color:var(--accent);font-weight:700}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:12px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.between{display:flex;justify-content:space-between;gap:8px;align-items:center}.muted{color:var(--muted)}h2{font-size:18px;margin:0 0 12px}h3{font-size:16px;margin:0 0 6px}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px}input,textarea,select{width:100%;background:#111317;color:var(--text);border:1px solid #424854;border-radius:9px;padding:11px;font:inherit}textarea{min-height:76px;resize:vertical}.fieldgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.full{grid-column:1/-1}.item{background:#202329;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:9px}.badge{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;background:#353b45;color:#e8ebef}.badge.ok{background:#183d2d;color:#91efbd}.badge.warn{background:#49391b;color:#ffe09a}.badge.danger{background:#4a2529;color:#ffb5b9}.smallbtn{font-size:12px;padding:7px 9px}.dangerbtn{border-color:#8a4147;color:#ffb5b9}.empty{text-align:center;color:var(--muted);padding:25px 10px}.hidden{display:none!important}.total{font-size:20px;font-weight:800;color:var(--ok)}.foot{font-size:12px;color:var(--muted);line-height:1.5;margin-top:18px}
+@media(max-width:430px){.fieldgrid{grid-template-columns:1fr}.full{grid-column:auto}.stats{gap:6px}.stat{padding:9px}.stat b{font-size:19px}.tab{padding:9px 10px}}
+</style>
+</head>
+<body>
+<header><div class="brand">Répa<span>Suivi</span></div><div class="subtitle">Gestion des dépôts et réparations · données sur cet appareil</div></header>
+<main>
+<div class="stats">
+ <div class="stat"><b id="statClients">0</b><small>Clients</small></div>
+ <div class="stat"><b id="statOpen">0</b><small>En cours</small></div>
+ <div class="stat"><b id="statReady">0</b><small>Terminés</small></div>
+</div>
+<nav>
+<button class="tab active" data-view="repairs">Réparations</button>
+<button class="tab" data-view="clients">Clients</button>
+<button class="tab" data-view="newrepair">+ Nouveau dépôt</button>
+<button class="tab" data-view="backup">Sauvegarde</button>
+</nav>
+<section id="view-repairs">
+ <div class="panel"><h2>Suivi des réparations</h2><input id="search" placeholder="Rechercher dossier, client, téléphone, appareil…" autocomplete="off"><div style="margin-top:9px"><select id="filterStatus"><option value="">Tous les statuts</option><option>Déposé</option><option>En diagnostic</option><option>En attente de pièces</option><option>En réparation</option><option>Réparé</option><option>Irréparable</option><option>Restitué</option></select></div></div>
+ <div id="repairList"></div>
+</section>
+<section id="view-clients" class="hidden">
+ <div class="panel"><div class="between"><h2>Clients</h2><button class="primary" id="addClientBtn">+ Ajouter</button></div><input id="clientSearch" placeholder="Rechercher un client…"></div><div id="clientList"></div>
+</section>
+<section id="view-newrepair" class="hidden">
+ <form id="repairForm" class="panel">
+ <h2 id="repairFormTitle">Nouveau dépôt</h2><input type="hidden" id="editRepairId">
+ <div class="fieldgrid">
+  <div class="full"><label>Client existant</label><select id="clientSelect"><option value="">— Nouveau client —</option></select></div>
+  <div><label>Nom et prénom *</label><input id="customerName" required></div>
+  <div><label>Téléphone</label><input id="customerPhone" type="tel"></div>
+  <div><label>Adresse</label><input id="customerAddress"></div>
+  <div><label>E-mail</label><input id="customerEmail" type="email"></div>
+  <div class="full"><label>Notes client</label><textarea id="customerNotes"></textarea></div>
+  <div><label>Type d'appareil *</label><input id="deviceType" required placeholder="Ex. convertisseur"></div>
+  <div><label>Marque / modèle</label><input id="deviceModel" placeholder="Ex. modèle, référence"></div>
+  <div><label>Numéro de série</label><input id="serial"></div>
+  <div><label>Date de dépôt</label><input id="depositDate" type="date" required></div>
+  <div class="full"><label>Panne signalée *</label><textarea id="fault" required></textarea></div>
+  <div class="full"><label>État à la réception / accessoires</label><textarea id="condition"></textarea></div>
+  <div class="full"><label>Diagnostic</label><textarea id="diagnosis"></textarea></div>
+  <div class="full"><label>Travaux effectués</label><textarea id="workDone"></textarea></div>
+  <div class="full"><label>Pièces utilisées (description et prix, une ligne par pièce)</label><textarea id="parts" placeholder="Ex. condensateur : 4,50 €&#10;Connecteur : 2,00 €"></textarea></div>
+  <div><label>Coût des pièces (€)</label><input id="partsCost" type="number" min="0" step="0.01" value="0"></div>
+  <div><label>Main-d'œuvre (€)</label><input id="laborCost" type="number" min="0" step="0.01" value="0"></div>
+  <div><label>Statut</label><select id="status"><option>Déposé</option><option>En diagnostic</option><option>En attente de pièces</option><option>En réparation</option><option>Réparé</option><option>Irréparable</option><option>Restitué</option></select></div>
+  <div><label>Date de restitution</label><input id="returnDate" type="date"></div>
+ </div>
+ <div class="between" style="margin:14px 0"><span class="muted">Total estimé</span><span class="total" id="totalPreview">0,00 €</span></div>
+ <div class="row"><button class="primary" type="submit">Enregistrer le dossier</button><button type="button" id="cancelEdit">Annuler</button></div>
+ </form>
+</section>
+<section id="view-backup" class="hidden">
+ <div class="panel"><h2>Sauvegarde des données</h2><p class="muted">Les données sont stockées dans le navigateur de ce téléphone. Exportez régulièrement une sauvegarde et conservez-la dans un endroit sûr.</p><div class="row"><button class="primary" id="exportBtn">Exporter la sauvegarde</button><button id="importBtn">Importer une sauvegarde</button><input id="importFile" type="file" accept="application/json,.json" class="hidden"></div><p class="foot">Important : l'effacement des données du navigateur peut supprimer les dossiers. Une sauvegarde exportée permet de les restaurer. Cette première version n'envoie aucune donnée vers un serveur.</p></div>
+ <div class="panel"><h2>À savoir</h2><p class="muted">Version initiale : gestion des clients et dossiers, calcul des tarifs et sauvegarde JSON. Les photos et la génération PDF seront ajoutées dans une prochaine étape. Pour des factures officielles, il faudra adapter les mentions aux obligations applicables à ton activité.</p></div>
+</section>
+<div class="foot">RépaSuivi · Version 0.1 · Usage personnel. Pense à sauvegarder régulièrement tes données.</div>
+</main>
+<script>
+const KEY='repasuivi_data_v1';
+const today=()=>new Date().toISOString().slice(0,10);
+let db={clients:[],repairs:[],nextRepair:1,nextClient:1};
+try{const old=localStorage.getItem(KEY);if(old)db={...db,...JSON.parse(old)}}catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const euro=n=>Number(n||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(db));renderAll()};
+const clientById=id=>db.clients.find(c=>c.id===id);
+const total=r=>Number(r.partsCost||0)+Number(r.laborCost||0);
+function showView(name){document.querySelectorAll('[id^="view-"]').forEach(x=>x.classList.add('hidden'));$('view-'+name).classList.remove('hidden');document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='newrepair'&&!$('editRepairId').value)resetForm();}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+function renderStats(){$('statClients').textContent=db.clients.length;$('statOpen').textContent=db.repairs.filter(r=>!['Réparé','Irréparable','Restitué'].includes(r.status)).length;$('statReady').textContent=db.repairs.filter(r=>['Réparé','Restitué'].includes(r.status)).length}
+function renderSelect(selected=''){$('clientSelect').innerHTML='<option value="">— Nouveau client —</option>'+db.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'fr')).map(c=>`<option value="${c.id}" ${c.id===selected?'selected':''}>${esc(c.name)}${c.phone?' · '+esc(c.phone):''}</option>`).join('')}
+function renderRepairs(){const q=$('search').value.toLowerCase(),f=$('filterStatus').value;const arr=db.repairs.filter(r=>{const c=clientById(r.clientId);const hay=[r.ref,c?.name,c?.phone,r.deviceType,r.deviceModel,r.fault,r.serial].join(' ').toLowerCase();return hay.includes(q)&&(!f||r.status===f)}).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));$('repairList').innerHTML=arr.length?arr.map(r=>{const c=clientById(r.clientId)||{name:'Client supprimé'};let cls=['Réparé','Restitué'].includes(r.status)?'ok':['En attente de pièces','En diagnostic'].includes(r.status)?'warn':r.status==='Irréparable'?'danger':'';return `<article class="item"><div class="between"><strong>${esc(r.ref)} · ${esc(r.deviceType)}</strong><span class="badge ${cls}">${esc(r.status)}</span></div><div style="margin:6px 0">${esc(r.deviceModel||'Modèle non précisé')} · <span class="muted">${esc(c.name)}</span></div><div class="muted">${esc(r.fault)}</div><div class="between" style="margin-top:10px"><span class="total">${euro(total(r))}</span><div class="row" style="flex:0"><button class="smallbtn" onclick="editRepair('${r.id}')">Ouvrir / modifier</button><button class="smallbtn" onclick="quickStatus('${r.id}')">Statut</button></div></div></article>`}).join(''):'<div class="panel empty">Aucun dossier trouvé. Utilise « Nouveau dépôt » pour commencer.</div>'}
+function renderClients(){const q=$('clientSearch').value.toLowerCase();const arr=db.clients.filter(c=>[c.name,c.phone,c.email,c.address].join(' ').toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'fr'));$('clientList').innerHTML=arr.length?arr.map(c=>{const rs=db.repairs.filter(r=>r.clientId===c.id);return `<article class="item"><div class="between"><strong>${esc(c.name)}</strong><span class="badge">${rs.length} appareil(s)</span></div><div class="muted">${esc(c.phone||'Pas de téléphone')} · ${esc(c.email||'Pas d’e-mail')}</div>${c.address?`<div class="muted">${esc(c.address)}</div>`:''}${c.notes?`<p>${esc(c.notes)}</p>`:''}<div class="row" style="margin-top:9px"><button class="smallbtn primary" onclick="newForClient('${c.id}')">Nouveau dépôt</button><button class="smallbtn" onclick="editClient('${c.id}')">Modifier client</button></div>${rs.map(r=>`<div class="muted" style="margin-top:7px">• ${esc(r.ref)} — ${esc(r.deviceType)} (${esc(r.status)})</div>`).join('')}</article>`}).join(''):'<div class="panel empty">Aucun client enregistré.</div>'}
+function renderAll(){renderStats();renderSelect($('clientSelect').value);renderRepairs();renderClients();updateTotal()}
+$('search').addEventListener('input',renderRepairs);$('filterStatus').addEventListener('change',renderRepairs);$('clientSearch').addEventListener('input',renderClients);
+$('clientSelect').addEventListener('change',()=>{const c=clientById($('clientSelect').value);if(c){$('customerName').value=c.name;$('customerPhone').value=c.phone||'';$('customerAddress').value=c.address||'';$('customerEmail').value=c.email||'';$('customerNotes').value=c.notes||''}else{$('customerName').value='';$('customerPhone').value='';$('customerAddress').value='';$('customerEmail').value='';$('customerNotes').value=''}});
+function updateTotal(){$('totalPreview').textContent=euro(Number($('partsCost').value||0)+Number($('laborCost').value||0))}
+$('partsCost').oninput=updateTotal;$('laborCost').oninput=updateTotal;
+function resetForm(){ $('repairForm').reset();$('editRepairId').value='';$('repairFormTitle').textContent='Nouveau dépôt';$('depositDate').value=today();$('partsCost').value='0';$('laborCost').value='0';$('status').value='Déposé';renderSelect();updateTotal() }
+$('cancelEdit').onclick=()=>{resetForm();showView('repairs')};
+function newForClient(id){resetForm();$('clientSelect').value=id;$('clientSelect').dispatchEvent(new Event('change'));showView('newrepair')}
+$('addClientBtn').onclick=()=>{const name=prompt('Nom et prénom du client :');if(!name?.trim())return;const c={id:'c'+Date.now(),name:name.trim(),phone:'',address:'',email:'',notes:''};db.clients.push(c);save();editClient(c.id)};
+function editClient(id){const c=clientById(id);if(!c)return;const name=prompt('Nom et prénom :',c.name);if(name===null)return;if(!name.trim())return alert('Le nom est obligatoire.');c.name=name.trim();c.phone=prompt('Téléphone :',c.phone||'')??c.phone;c.address=prompt('Adresse :',c.address||'')??c.address;c.email=prompt('E-mail :',c.email||'')??c.email;c.notes=prompt('Notes :',c.notes||'')??c.notes;save()}
+function editRepair(id){const r=db.repairs.find(x=>x.id===id);if(!r)return;resetForm();$('editRepairId').value=r.id;$('repairFormTitle').textContent='Modifier '+r.ref;renderSelect(r.clientId);$('clientSelect').value=r.clientId;const c=clientById(r.clientId)||{};for(const [id,val] of Object.entries({customerName:c.name||'',customerPhone:c.phone||'',customerAddress:c.address||'',customerEmail:c.email||'',customerNotes:c.notes||'',deviceType:r.deviceType,deviceModel:r.deviceModel,serial:r.serial,depositDate:r.depositDate,fault:r.fault,condition:r.condition,diagnosis:r.diagnosis,workDone:r.workDone,parts:r.parts,partsCost:r.partsCost,laborCost:r.laborCost,status:r.status,returnDate:r.returnDate||''}))$(id).value=val??'';updateTotal();showView('newrepair')}
+function quickStatus(id){const r=db.repairs.find(x=>x.id===id);if(!r)return;const opts=['Déposé','En diagnostic','En attente de pièces','En réparation','Réparé','Irréparable','Restitué'];const next=prompt('Nouveau statut :\n'+opts.map((s,i)=>`${i+1}. ${s}`).join('\n'),String(opts.indexOf(r.status)+1));if(next===null)return;const n=Number(next);if(!Number.isInteger(n)||n<1||n>opts.length)return alert('Choix invalide.');r.status=opts[n-1];if(r.status==='Restitué'&&!r.returnDate)r.returnDate=today();save()}
+$('repairForm').addEventListener('submit',e=>{e.preventDefault();const name=$('customerName').value.trim();if(!name)return;let c=clientById($('clientSelect').value);if(!c){c={id:'c'+Date.now(),name,phone:$('customerPhone').value.trim(),address:$('customerAddress').value.trim(),email:$('customerEmail').value.trim(),notes:$('customerNotes').value.trim()};db.clients.push(c)}else Object.assign(c,{name,phone:$('customerPhone').value.trim(),address:$('customerAddress').value.trim(),email:$('customerEmail').value.trim(),notes:$('customerNotes').value.trim()});
+const id=$('editRepairId').value;const old=id?db.repairs.find(r=>r.id===id):null;const r={id:id||'r'+Date.now(),ref:old?.ref||`REP-${new Date().getFullYear()}-${String(db.nextRepair++).padStart(3,'0')}`,clientId:c.id,deviceType:$('deviceType').value.trim(),deviceModel:$('deviceModel').value.trim(),serial:$('serial').value.trim(),depositDate:$('depositDate').value,fault:$('fault').value.trim(),condition:$('condition').value.trim(),diagnosis:$('diagnosis').value.trim(),workDone:$('workDone').value.trim(),parts:$('parts').value.trim(),partsCost:Number($('partsCost').value||0),laborCost:Number($('laborCost').value||0),status:$('status').value,returnDate:$('returnDate').value,createdAt:old?.createdAt||new Date().toISOString()};if(old)Object.assign(old,r);else db.repairs.push(r);save();resetForm();showView('repairs');alert('Dossier enregistré : '+r.ref)});
+$('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({...db,exportedAt:new Date().toISOString(),app:'RépaSuivi'},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='repasuivi-sauvegarde-'+today()+'.json';a.click();URL.revokeObjectURL(a.href)};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data.clients)||!Array.isArray(data.repairs))throw Error();if(!confirm('Importer cette sauvegarde remplacera les données actuelles. Continuer ?'))return;db={clients:data.clients,repairs:data.repairs,nextRepair:data.nextRepair||data.repairs.length+1,nextClient:data.nextClient||data.clients.length+1};save();alert('Sauvegarde restaurée.')}catch(err){alert('Fichier invalide ou illisible.')}e.target.value=''};
+resetForm();renderAll();
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Mode hors ligne non activé', err))); }
+</script>
+</body></html>
